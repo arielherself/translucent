@@ -1,4 +1,4 @@
-use std::{net::Ipv4Addr, sync::Arc};
+use std::{net::Ipv4Addr, sync::Arc, error::Error};
 
 use tokio::{io::{split, AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf}, net::{TcpListener, TcpStream}, sync::Mutex};
 
@@ -49,11 +49,11 @@ impl std::fmt::Display for Host {
 struct S5ProxyRelay {
     host: Host,
     port: u16,
-    local: tokio::net::TcpStream,
-    remote: tokio::net::TcpStream,
+    local: TcpStream,
+    remote: TcpStream,
 }
 
-async fn relay_stream(mut from: ReadHalf<TcpStream>, mut to: WriteHalf<TcpStream>, debug_target: &str, debug_host: &Host, debug_port: u16) -> Result<(), Box<dyn std::error::Error>> {
+async fn relay_stream(mut from: ReadHalf<TcpStream>, mut to: WriteHalf<TcpStream>, debug_target: &str, debug_host: &Host, debug_port: u16) -> Result<(), Box<dyn Error>> {
     let mut buf = [0; BUFFER_SIZE];
     let debug_t = format!("{}({}:{})", debug_target, debug_host, debug_port);
     loop {
@@ -81,7 +81,7 @@ async fn relay_stream(mut from: ReadHalf<TcpStream>, mut to: WriteHalf<TcpStream
 }
 
 impl S5ProxyRelay {
-    async fn from(mut socket: tokio::net::TcpStream, bytes_formatter: Arc<Mutex<BytesFormatter>>) -> Option<Self> {
+    async fn from(mut socket: TcpStream, bytes_formatter: Arc<Mutex<BytesFormatter>>) -> Option<Self> {
         let mut buf = [0; BUFFER_SIZE];
         let mut sub_negotiate_finished = false;
         while let Ok(bytes_recv) = socket.read(&mut buf).await {
@@ -142,7 +142,7 @@ impl S5ProxyRelay {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn main() -> Result<(), Box<dyn Error>> {
     simple_logger::init_with_level(if cfg!(feature = "debug") {
         log::Level::Debug
     } else {

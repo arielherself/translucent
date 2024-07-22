@@ -13,16 +13,22 @@ This repository is an implementation of Translucent client and server. As only a
 
 ## Run
 
+First install through Cargo:
+
+```bash
+cargo install translucent
+```
+
 Run local server:
 
 ```bash
-cargo run --release --bin tllocal
+tllocal
 ```
 
 Run remote server:
 
 ```bash
-cargo run --release --bin tlserver
+tlserver
 ```
 
-Debug features and more detailed logs can be enabled by compilation flag `--features debug`.
+You can also build the binaries manually. Debug features and more detailed logs can be enabled by compilation flag `--features debug`.
