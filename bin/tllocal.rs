@@ -1,50 +1,7 @@
 use std::{net::Ipv4Addr, sync::Arc, error::Error};
 
 use tokio::{io::{split, AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf}, net::{TcpListener, TcpStream}, sync::Mutex};
-
-const BUFFER_SIZE: usize = 1024;
-
-struct BytesFormatter;
-
-impl BytesFormatter {
-    fn new() -> Self {
-        Self {}
-    }
-    fn print_bytes(&self, bytes: &[u8], n: usize) {
-        const COLUMN: usize = 16;
-        eprintln!("    {}", ansi_term::Colour::Green.bold().paint(format!("Size: {}", n)));
-        for byte_row in bytes[..n].chunks(COLUMN) {
-            eprint!("      ");
-            for b in byte_row {
-                eprint!("{}", ansi_term::Colour::Cyan.paint(format!("{:02x} ", b)));
-            }
-            eprint!("{}", String::from_utf8(vec![b' '; 10 + (COLUMN - byte_row.len()) * 3]).unwrap());
-            for b in byte_row {
-                eprint!("{}", if b.is_ascii_graphic() {
-                    format!("{}", *b as char)
-                } else {
-                    ".".to_string()
-                });
-            }
-            eprintln!();
-        }
-    }
-}
-
-#[derive(Clone)]
-enum Host {
-    Ipv4(Ipv4Addr),
-    Hostname(Vec<u8>),
-}
-
-impl std::fmt::Display for Host {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Host::Ipv4(addr) => write!(f, "{}", addr),
-            Host::Hostname(name) => write!(f, "{}", std::str::from_utf8(name).unwrap()),
-        }
-    }
-}
+use translucent::{bytes_formatter::BytesFormatter, consts::BUFFER_SIZE, net::connect, types::{ConnectionError, Host}};
 
 struct S5ProxyRelay {
     host: Host,
@@ -81,7 +38,7 @@ async fn relay_stream(mut from: ReadHalf<TcpStream>, mut to: WriteHalf<TcpStream
 }
 
 impl S5ProxyRelay {
-    async fn from(mut socket: TcpStream, bytes_formatter: Arc<Mutex<BytesFormatter>>) -> Option<Self> {
+    async fn from(mut socket: TcpStream, bytes_formatter: Arc<Mutex<BytesFormatter>>) -> Result<Self, Box<dyn Error + Send>> {
         let mut buf = [0; BUFFER_SIZE];
         let mut sub_negotiate_finished = false;
         while let Ok(bytes_recv) = socket.read(&mut buf).await {
@@ -104,11 +61,8 @@ impl S5ProxyRelay {
                 if let Ok(()) = socket.write_all(&[&[0x05, 0x00, 0x00, 0x01], &[0u8; 6] as &[u8]].concat()).await {
                     log::info!("Successfully received Socks5 proxy request to {}:{}", host.as_ref().unwrap(), port);
                     if let Some(host) = host {
-                        if let Ok(stream) = match &host {
-                            Host::Ipv4(addr) => TcpStream::connect((addr.to_owned(), port)).await,
-                            Host::Hostname(name) => TcpStream::connect((std::str::from_utf8(name).unwrap(), port)).await,
-                        } {
-                            return Some(Self {
+                        if let Ok(stream) = connect(&host, port).await {
+                            return Ok(Self {
                                 host,
                                 port,
                                 local: socket,
@@ -120,10 +74,10 @@ impl S5ProxyRelay {
                     }
                 }
             } else {
-                break;
+                return Err(Box::new(ConnectionError(String::from("Unexpected handshake"))));
             }
         }
-        None
+        Err(Box::new(ConnectionError(String::from("Unexpected EOF while initializing connection"))))
     }
 
     /// Relay a single tcp connection
@@ -156,10 +110,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let (socket, _) = listener.accept().await?;
         let bytes_formatter_clone = bytes_formatter.clone();
         tokio::spawn(async move {
-            if let Some(relay) = S5ProxyRelay::from(socket, bytes_formatter_clone).await {
-                relay.decay().await;
-            } else {
-                log::warn!("Request not initialized.");
+            match S5ProxyRelay::from(socket, bytes_formatter_clone).await {
+                Ok(relay) => relay.decay().await,
+                Err(e) => log::warn!("Request not initialized: {e}"),
             }
         });
     }

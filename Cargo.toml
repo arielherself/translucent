@@ -6,7 +6,6 @@ description = "A general proxy service."
 readme = "README.md"
 repository = "https://codeberg.org/arielherself/translucent"
 license = "MIT"
-license-file = "LICENSE"
 edition = "2021"
 
 [dependencies]
@@ -20,8 +19,8 @@ debug = []
 
 [[bin]]
 name = "tllocal"
-path = "src/local/main.rs"
+path = "bin/tllocal.rs"
 
 [[bin]]
 name = "tlserver"
-path = "src/server/main.rs"
+path = "bin/tlserver.rs"
