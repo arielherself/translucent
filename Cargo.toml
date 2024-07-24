@@ -1,0 +1,20 @@
+[package]
+name = "translucent"
+version = "0.1.0"
+authors = ["Ariel <arielherself@duck.com>"]
+description = "A general proxy service."
+readme = "README.md"
+repository = "https://codeberg.org/arielherself/translucent"
+license = "MIT"
+edition = "2021"
+
+[features]
+debug = []
+
+[[bin]]
+name = "tllocal"
+path = "bin/tllocal.rs"
+
+[[bin]]
+name = "tlserver"
+path = "bin/tlserver.rs"
