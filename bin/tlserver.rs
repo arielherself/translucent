@@ -1,33 +1,39 @@
 use std::{error::Error, sync::Arc};
 
 use tokio::{io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf}, net::{TcpListener, TcpStream}, sync::Mutex};
-use translucent::{bytes_formatter::BytesFormatter, consts::BUFFER_SIZE, net::connect, serializer::StatelessSerializer, types::{ConnectionError, Host, TranslucentPacket}};
+use translucent::{bytes_formatter::BytesFormatter, consts::BUFFER_SIZE, net::connect, protocol::SupportedProtocol, serializer::StatelessSerializer, types::{ConnectionError, Host, TranslucentPacket}};
 
-struct TranslucentRelay {
+struct TranslucentRelay<Protocol: SupportedProtocol> {
     host: Host,
     port: u16,
     client: TcpStream,
     remote: TcpStream,
-    init_packet: Option<TranslucentPacket>,
+    init_packet: Option<TranslucentPacket<Protocol>>,
 }
 
-impl TranslucentRelay {
-    async fn from(mut socket: TcpStream, bytes_formatter: Arc<Mutex<BytesFormatter>>) -> Result<Self, Box<dyn Error + Send>> {
-        if let Ok(packet) =  StatelessSerializer::deserialize_from_stream(&mut socket).await {
-            let remote_stream = connect(&packet.host, packet.port).await?;
-            Ok(Self {
-                host: packet.host.to_owned(),
-                port: packet.port,
-                client: socket,
-                remote: remote_stream,
-                init_packet: Some(packet),
-            })
-        } else {
-            Err(Box::new(ConnectionError(String::from("Cannot unpack data from client."))))
-        }
+impl <Protocol: SupportedProtocol> TranslucentRelay<Protocol> {
+    async fn decay(mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+        Ok(())
     }
 }
 
+async fn init_relay(mut socket: TcpStream, bytes_formatter: Arc<Mutex<BytesFormatter>>) -> Result<TranslucentRelay<impl SupportedProtocol>, Box<dyn Error + Send + Sync>> {
+    if let Ok(packet) =  StatelessSerializer::deserialize_from_stream(&mut socket).await {
+        let remote_stream = connect(&packet.host, packet.port).await?;
+        Ok(TranslucentRelay {
+            host: packet.host.to_owned(),
+            port: packet.port,
+            client: socket,
+            remote: remote_stream,
+            init_packet: Some(packet),
+        })
+    } else {
+        Err(Box::new(ConnectionError))
+    }
+}
+
+// TODO: This function should be shared between `tllocal` and `tlserver`, which receives a handler
+// for serializing/deserializing data.
 async fn relay_stream(mut from: ReadHalf<TcpStream>, mut to: WriteHalf<TcpStream>, debug_target: &str, debug_host: &Host, debug_port: u16) -> Result<(), Box<dyn Error>> {
     let mut buf = [0; BUFFER_SIZE];
     let debug_t = format!("{}({}:{})", debug_target, debug_host, debug_port);
@@ -56,7 +62,7 @@ async fn relay_stream(mut from: ReadHalf<TcpStream>, mut to: WriteHalf<TcpStream
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     simple_logger::init_with_level(if cfg!(feature = "debug") {
         log::Level::Debug
     } else {
@@ -70,6 +76,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let (socket, _) = listener.accept().await?;
         let bytes_formatter_clone = bytes_formatter.clone();
         tokio::spawn(async move {
+            if let Ok(relay) = init_relay(socket, bytes_formatter_clone).await {
+                match relay.decay().await {
+                    Ok(()) => todo!(),
+                    Err(e) => todo!(),
+                }
+            }
         });
     }
 }

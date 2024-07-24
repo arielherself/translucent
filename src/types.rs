@@ -1,15 +1,16 @@
+use derive_more::Error;
 use std::{error::Error, net::Ipv4Addr};
 
-#[derive(Debug)]
-pub struct ConnectionError(pub String);
+use crate::protocol::SupportedProtocol;
 
-impl std::fmt::Display for ConnectionError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
+#[derive(Debug, derive_more::Display, derive_more::Error)]
+pub struct ConnectionError;
 
-impl Error for ConnectionError {}
+#[derive(Debug, derive_more::Display, derive_more::Error)]
+pub struct ParseError;
+
+#[derive(Debug, derive_more::Display, derive_more::Error)]
+pub struct UnknownError;
 
 #[derive(Clone)]
 pub enum Host {
@@ -26,20 +27,8 @@ impl std::fmt::Display for Host {
     }
 }
 
-pub struct HttpPacket {
-    pub size: usize,
-    pub header: Vec<u8>,
-    pub content: Vec<u8>,
-}
-
-pub enum TranslucentPayload {
-    Bytes(Vec<u8>),
-    Http(HttpPacket),
-    // TODO: Tls(TlsPacket),
-}
-
-pub struct TranslucentPacket {
+pub struct TranslucentPacket<Protocol: SupportedProtocol> {
     pub host: Host,
     pub port: u16,
-    pub payload: TranslucentPayload,
+    pub payload: Protocol::PayloadType,
 }

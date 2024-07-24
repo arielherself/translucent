@@ -74,10 +74,10 @@ impl S5ProxyRelay {
                     }
                 }
             } else {
-                return Err(Box::new(ConnectionError(String::from("Unexpected handshake"))));
+                return Err(Box::new(ConnectionError));
             }
         }
-        Err(Box::new(ConnectionError(String::from("Unexpected EOF while initializing connection"))))
+        Err(Box::new(ConnectionError))
     }
 
     /// Relay a single tcp connection
