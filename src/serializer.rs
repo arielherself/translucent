@@ -2,7 +2,7 @@ use std::error::Error;
 
 use tokio::net::TcpStream;
 
-use crate::{protocol::SupportedProtocol, types::{TranslucentPacket, UnknownError}};
+use crate::{protocol::SupportedProtocol, types::{TranslucentPacket, error::UnknownError}};
 
 pub struct StatelessSerializer;
 
@@ -19,6 +19,6 @@ impl StatelessSerializer {
 
     pub async fn deserialize_from_stream(socket: &mut TcpStream) -> Result<TranslucentPacket<impl SupportedProtocol>, Box<dyn Error + Send + Sync>> {
         // TODO: implementation
-        Err::<TranslucentPacket<crate::protocol::http::HttpProtocol>, Box<dyn Error + Send + Sync>>(Box::new(UnknownError{}))
+        Err::<TranslucentPacket<crate::protocol::http::HttpProtocol>, Box<dyn Error + Send + Sync>>(Box::new(UnknownError))
     }
 }

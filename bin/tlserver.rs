@@ -1,7 +1,7 @@
 use std::{error::Error, sync::Arc};
 
 use tokio::{io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf}, net::{TcpListener, TcpStream}, sync::Mutex};
-use translucent::{bytes_formatter::BytesFormatter, consts::BUFFER_SIZE, net::connect, protocol::SupportedProtocol, serializer::StatelessSerializer, types::{ConnectionError, Host, TranslucentPacket}};
+use translucent::{bytes_formatter::BytesFormatter, consts::BUFFER_SIZE, net::connect, protocol::SupportedProtocol, serializer::StatelessSerializer, types::{error::ConnectionError, Host, TranslucentPacket}};
 
 struct TranslucentRelay<Protocol: SupportedProtocol> {
     host: Host,

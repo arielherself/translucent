@@ -1,4 +1,4 @@
-use crate::types::{ParseError, TranslucentPacket};
+use crate::types::{error::ParseError, TranslucentPacket};
 
 use super::SupportedProtocol;
 

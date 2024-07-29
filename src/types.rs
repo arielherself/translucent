@@ -1,16 +1,17 @@
-use derive_more::Error;
-use std::{error::Error, net::Ipv4Addr};
+use std::net::Ipv4Addr;
 
 use crate::protocol::SupportedProtocol;
 
-#[derive(Debug, derive_more::Display, derive_more::Error)]
-pub struct ConnectionError;
+pub mod error {
+    #[derive(Debug, derive_more::Display, derive_more::Error)]
+    pub struct ConnectionError;
 
-#[derive(Debug, derive_more::Display, derive_more::Error)]
-pub struct ParseError;
+    #[derive(Debug, derive_more::Display, derive_more::Error)]
+    pub struct ParseError;
 
-#[derive(Debug, derive_more::Display, derive_more::Error)]
-pub struct UnknownError;
+    #[derive(Debug, derive_more::Display, derive_more::Error)]
+    pub struct UnknownError;
+}
 
 #[derive(Clone)]
 pub enum Host {

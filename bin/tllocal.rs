@@ -1,7 +1,7 @@
 use std::{net::Ipv4Addr, sync::Arc, error::Error};
 
 use tokio::{io::{split, AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf}, net::{TcpListener, TcpStream}, sync::Mutex};
-use translucent::{bytes_formatter::BytesFormatter, consts::BUFFER_SIZE, net::connect, types::{ConnectionError, Host}};
+use translucent::{bytes_formatter::BytesFormatter, consts::BUFFER_SIZE, net::connect, types::{error::ConnectionError, Host}};
 
 struct S5ProxyRelay {
     host: Host,
