@@ -17,3 +17,8 @@ Cargo.lock
 # Added by cargo
 
 /target
+
+.venv/
+node_modules
+package.json
+package-lock.json

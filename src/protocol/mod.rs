@@ -9,7 +9,7 @@ pub trait SupportedProtocol : TryInto<TranslucentPacket<Self>> {
 
     /// Determines if the head of a packet indicates a valid packet of this protocol. If so, this
     /// function returns a handler for it.
-    fn from(packet: &[u8]) -> Option<Self>;
+    fn from_packet(partial_packet: &[u8]) -> Option<Self>;
 
     /// Returns the exact size (if available) of remaining bytes in the current packet. Possible values:
     ///   None     => size of the packet cannot be determined,

@@ -13,6 +13,7 @@ struct TranslucentRelay<Protocol: SupportedProtocol> {
 
 impl <Protocol: SupportedProtocol> TranslucentRelay<Protocol> {
     async fn decay(mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+        // TODO: implementation
         Ok(())
     }
 }
