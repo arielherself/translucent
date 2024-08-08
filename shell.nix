@@ -17,6 +17,5 @@ in pkgs.mkShell {
     python -m venv .venv
     source .venv/bin/activate
     pip install posting
-    npm install hello-world-server
   '';
 }

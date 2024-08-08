@@ -2,28 +2,20 @@ use crate::{bytes::next_crlf, bytes_formatter, types::{error::ParseError, Transl
 
 use super::SupportedProtocol;
 
-pub struct HttpPayload {
-    pub size: usize,
-    pub header: Vec<u8>,
-    pub content: Vec<u8>,
-}
-
 
 /// This struct should also recognize forwarded http request.
 pub struct HttpProtocol;
 
-impl TryInto<TranslucentPacket<HttpProtocol>> for HttpProtocol {
+impl TryInto<TranslucentPacket> for HttpProtocol {
     type Error = ParseError;
 
-    fn try_into(self) -> Result<TranslucentPacket<HttpProtocol>, Self::Error> {
+    fn try_into(self) -> Result<TranslucentPacket, Self::Error> {
         todo!()
     }
 }
 
-// TODO: implementation
-impl SupportedProtocol for HttpProtocol {
-    type PayloadType = HttpPayload;
-    fn from_packet(partial_packet: &[u8]) -> Option<Self> {
+impl HttpProtocol {
+    pub fn from_packet(partial_packet: &[u8]) -> Option<Self> {
         let bytes_recv = partial_packet.len();
         bytes_formatter::BytesFormatter::new().print_bytes(partial_packet, bytes_recv);
         let lines = &partial_packet[..bytes_recv];
@@ -33,12 +25,25 @@ impl SupportedProtocol for HttpProtocol {
             if first_line.len() == 3
                && (first_line[0] == b"GET" || first_line[0] == b"POST")
                && first_line[2] == b"HTTP/1.1" {
-                log::debug!("Hit http request.")
+                log::debug!("Hit http request.");
+                return Some(Self {
+                    // TODO:
+                });
             }
         }
+        None
+    }
+}
+
+// TODO: implementation
+impl SupportedProtocol for HttpProtocol {
+    fn exact_size(&self) -> Option<usize> {
         todo!()
     }
-    fn exact_size() -> Option<usize> {
+    fn extend(&mut self, data: &[u8]) {
+        todo!()
+    }
+    fn wrap(&self) -> Result<TranslucentPacket, Box<ParseError>> {
         todo!()
     }
 }

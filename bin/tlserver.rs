@@ -1,36 +1,25 @@
 use std::{error::Error, sync::Arc};
 
 use tokio::{io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf}, net::{TcpListener, TcpStream}, sync::Mutex};
-use translucent::{bytes_formatter::BytesFormatter, consts::BUFFER_SIZE, net::connect, protocol::SupportedProtocol, serializer::StatelessSerializer, types::{error::ConnectionError, Host, TranslucentPacket}};
+use translucent::{bytes_formatter::BytesFormatter, consts::BUFFER_SIZE, net::connect, types::{error::ConnectionError, Host, TranslucentPacket}};
 
-struct TranslucentRelay<Protocol: SupportedProtocol> {
+struct TranslucentRelay {
     host: Host,
     port: u16,
     client: TcpStream,
     remote: TcpStream,
-    init_packet: Option<TranslucentPacket<Protocol>>,
+    init_packet: Option<TranslucentPacket>,
 }
 
-impl <Protocol: SupportedProtocol> TranslucentRelay<Protocol> {
+impl TranslucentRelay {
     async fn decay(mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         // TODO: implementation
         Ok(())
     }
 }
 
-async fn init_relay(mut socket: TcpStream, bytes_formatter: Arc<Mutex<BytesFormatter>>) -> Result<TranslucentRelay<impl SupportedProtocol>, Box<dyn Error + Send + Sync>> {
-    if let Ok(packet) =  StatelessSerializer::deserialize_from_stream(&mut socket).await {
-        let remote_stream = connect(&packet.host, packet.port).await?;
-        Ok(TranslucentRelay {
-            host: packet.host.to_owned(),
-            port: packet.port,
-            client: socket,
-            remote: remote_stream,
-            init_packet: Some(packet),
-        })
-    } else {
-        Err(Box::new(ConnectionError))
-    }
+async fn init_relay(mut socket: TcpStream, bytes_formatter: Arc<Mutex<BytesFormatter>>) -> Result<TranslucentRelay, Box<dyn Error + Send + Sync>> {
+    Err(Box::new(ConnectionError))
 }
 
 // TODO: This function should be shared between `tllocal` and `tlserver`, which receives a handler
